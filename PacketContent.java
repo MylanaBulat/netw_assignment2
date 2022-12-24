@@ -1,0 +1,108 @@
+import java.net.DatagramPacket;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+
+/**
+ * The class is the basis for packet contents of various types.
+ */
+
+public abstract class PacketContent {
+    public static final int ACKPACKET = 10;
+    public static final int FILECONTENT= 100;
+    public static final int PACKETIN = 200;
+    public static final int FLOWMOD = 300;
+
+    int type= 0;
+
+    /**
+     * Constructs an object out of a datagram packet.
+     * @param packet Packet to analyse.
+     */
+    public static PacketContent fromDatagramPacket(DatagramPacket packet){
+        PacketContent content = null;
+        try{
+            int type;
+
+            byte[] data;
+            ByteArrayInputStream bin;
+            ObjectInputStream oin;
+
+            data = packet.getData();  // use packet content as seed for stream
+            bin = new ByteArrayInputStream(data);
+            oin = new ObjectInputStream(bin);
+
+            type = oin.readInt();  // read type from beginning of packet
+
+            content = switch (type) {
+                case FILECONTENT -> new FileContent(oin);
+                case ACKPACKET -> new AckPacket(oin);
+                case PACKETIN -> new PacketIn(oin);
+                case FLOWMOD -> new FlowMod(oin);
+                default -> null;
+            };
+            oin.close();
+            bin.close();
+
+        }
+        catch (Exception e) {e.printStackTrace();}
+
+        return content;
+    }
+
+    /**
+     * This method is used to transform content into an output stream.
+     *
+     * @param out Stream to write the content for the packet to.
+     */
+    protected abstract void toObjectOutputStream(ObjectOutputStream out);
+
+    /**
+     * Returns the content of the object as DatagramPacket.
+     *
+     * @return Returns the content of the object as DatagramPacket.
+     */
+
+    public DatagramPacket toDatagrampacket(){
+        DatagramPacket packet = null;
+        try {
+            ByteArrayOutputStream bout;
+            ObjectOutputStream oout;
+            byte[] data;
+
+            bout = new ByteArrayOutputStream();
+            oout = new ObjectOutputStream(bout);
+
+            oout.writeInt(type);         // write type to stream
+            toObjectOutputStream(oout);  // write content to stream depending on type
+
+            oout.flush();
+            data = bout.toByteArray(); // convert content to byte array
+
+            packet = new DatagramPacket(data, data.length); // create packet from byte array
+            oout.close();
+            bout.close();
+        }
+        catch(Exception e) {e.printStackTrace();}
+
+        return packet;
+    }
+
+    /**
+     * Returns the content of the packet as String.
+     *
+     * @return Returns the content of the packet as String.
+     */
+    public abstract String toString();
+
+    /**
+     * Returns the type of the packet.
+     *
+     * @return Returns the type of the packet.
+     */
+    public int getType() {
+        return type;
+    }
+}

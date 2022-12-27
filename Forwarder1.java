@@ -8,13 +8,13 @@ import java.util.HashMap;
 public class Forwarder1 extends Node {
     static final String FORWARD1 = "forwarder1";
     static final int DEFAULT_SRC_PORT = 54321;
-    static final String DST_NODE = "server";
-    static final int DST_PORT = 50001;
+    static final String DST_NODE = "forwarder2";
+    static final int DST_PORT = 54322;
 
     String nextNode;
     int nextPort;
     InetSocketAddress newAddress;
-    DatagramPacket cpacket;
+    DatagramPacket testPack;
 
     HashMap<Integer, String> forwardingTableNode = new HashMap<Integer, String>();
     HashMap<Integer, Integer> forwardingTablePort = new HashMap<Integer, Integer>();
@@ -35,7 +35,8 @@ public class Forwarder1 extends Node {
             System.out.println("Received packet");
             PacketContent content = PacketContent.fromDatagramPacket(packet);
 
-
+/**
+ *
             if(content.getType() == PacketContent.FLOWMOD){
                 FlowMod ack = (FlowMod)content;
                 Integer dest = ack.getDst();
@@ -45,38 +46,29 @@ public class Forwarder1 extends Node {
                 forwardingTableNode.put(dest, node);
                 forwardingTablePort.put(dest, port);
                 newAddress = new InetSocketAddress(node, port);
-                cpacket.setSocketAddress(newAddress);
-                socket.send(cpacket);
+                testPack.setSocketAddress(newAddress);
+                socket.send(testPack);
             }
+ *
+ */
 
 
             if(content.getType() == PacketContent.FILECONTENT){
                 FileContent fileContent = (FileContent)content;
                 Integer dest = fileContent.getDst();
-                String nextNode = forwardingTableNode.get(dest);
-                int nextPort = forwardingTablePort.get(dest);
+                nextNode = forwardingTableNode.get(dest);
+                nextPort = forwardingTablePort.get(dest);
 
-                InetSocketAddress endpoint2DstAddress = new InetSocketAddress(nextNode, nextPort);
-                packet.setSocketAddress(endpoint2DstAddress);
+                InetSocketAddress forwarder2Address = new InetSocketAddress(nextNode, nextPort);
+                packet.setSocketAddress(forwarder2Address);
                 socket.send(packet);
-                System.out.println("Packet sent to server");
+                System.out.println("Packet sent to forwarder 2");
              }
 
 
             /**
              *
              */
-            //if(content.getType() == PacketContent.FILECONTENT){
-                FileContent fileContent = (FileContent)content;
-                //getting the destination node stored in the header
-                Integer dst = fileContent.getDst();
-
-                //else
-                //temp.setSocketAddress(nextAddress);
-                //temp = packet;
-                //DatagramPacket request;
-                //request = new PacketIn(destination, currentNode)
-            //}
 
         } catch (java.lang.Exception e) {
             e.printStackTrace();
@@ -84,8 +76,8 @@ public class Forwarder1 extends Node {
     }
     public synchronized void start() throws Exception {
         System.out.println("Waiting for contact");
-        forwardingTableNode.put(0x00DDAAAA, "server");
-        forwardingTablePort.put(0x00DDAAAA, 50001);
+        forwardingTableNode.put(0x00DDAAAA, "forwarder2");
+        forwardingTablePort.put(0x00DDAAAA, 54322);
         forwardingTableNode.put(0x00BBCCDD, "laptop");
         forwardingTablePort.put(0x00BBCCDD, 50000);
         this.wait();

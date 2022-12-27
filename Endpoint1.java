@@ -68,7 +68,7 @@ public class Endpoint1 extends Node {
         laptopAddress = new InetSocketAddress(DEFAULT_SRC_NODE, DEFAULT_SRC_PORT);
         packet.setSocketAddress(dstAddress);
         socket.send(packet);
-        System.out.println("Packet sent to server");
+        System.out.println("Packet sent to forwarder 1");
         this.wait();
     }
 

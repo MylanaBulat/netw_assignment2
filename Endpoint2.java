@@ -5,8 +5,8 @@ import java.net.SocketAddress;
 
 public class Endpoint2 extends Node{
     static final int DEFAULT_SRC_PORT = 50001;
-    static final int DEFAULT_DST_PORT = 54321;
-    static final String DEFAULT_DST_NODE = "forwarder1";
+    static final int DEFAULT_DST_PORT = 54333;
+    static final String DEFAULT_DST_NODE = "forwarder3";
     static final String SRC_NODE ="server";
     InetSocketAddress dstAddress;  // CP (Forwarder3 address)
 

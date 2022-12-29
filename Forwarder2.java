@@ -71,7 +71,7 @@ public class Forwarder2 extends Node {
      */
     public static void main(String[] args) {
         try {
-            (new Forwarder1(DEFAULT_SRC_PORT)).start();
+            (new Forwarder2(DEFAULT_SRC_PORT)).start();
             System.out.println("Program completed");
         } catch(java.lang.Exception e) {e.printStackTrace();}
     }

@@ -1,13 +1,12 @@
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashMap;
 
 public class Controller extends Node{
 
     static final int SRC_PORT = 50003;
-    static final String SRC_NODE = "controller";
+    // static final String SRC_NODE = "controller";
     static final String FORWARD1 = "forwarder1";
     static final String FORWARD2 = "forwarder2";
     static final String FORWARD3 = "forwarder3";
@@ -21,11 +20,11 @@ public class Controller extends Node{
 
     SocketAddress forwAddress;
 
-    HashMap <String, String> ServerNodeList = new HashMap<String, String>();
-    HashMap <String, Integer> ServerPortList = new HashMap<String, Integer>();
+    HashMap <String, String> ServerNodeList = new HashMap<>();
+    HashMap <String, Integer> ServerPortList = new HashMap<>();
 
-    HashMap <String, String> LaptopNodeList = new HashMap<String, String>();
-    HashMap <String, Integer> LaptopPortList = new HashMap<String, Integer>();
+    HashMap <String, String> LaptopNodeList = new HashMap<>();
+    HashMap <String, Integer> LaptopPortList = new HashMap<>();
 
     Controller (int port) {
         try {
@@ -42,8 +41,8 @@ public class Controller extends Node{
             PacketContent content = PacketContent.fromDatagramPacket(packet);
             Integer dest = ((PacketIn)content).getDst();
             String currentNode = ((PacketIn)content).getCurrentNode();
-            String nextNode = null;
-            int nextPort = 0;
+            String nextNode;
+            int nextPort;
 
             forwAddress = packet.getSocketAddress();
 

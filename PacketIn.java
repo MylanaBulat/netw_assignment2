@@ -3,9 +3,9 @@ import java.io.ObjectOutputStream;
 
 public class PacketIn extends PacketContent{
     Integer destination;
-    Integer currentNode;
+    String currentNode;
 
-    PacketIn(Integer destination, Integer currentNode) {
+    PacketIn(Integer destination, String currentNode) {
         type = PACKETIN;
         this.destination = destination;
         this.currentNode = currentNode;
@@ -15,7 +15,7 @@ public class PacketIn extends PacketContent{
         try {
             type = PACKETIN;
             destination = oin.readInt();
-            currentNode = oin.readInt();
+            currentNode = oin.readUTF();
         }
         catch(Exception e) {e.printStackTrace();}
     }
@@ -24,7 +24,7 @@ public class PacketIn extends PacketContent{
     protected void toObjectOutputStream(ObjectOutputStream oout) {
         try {
             oout.writeInt(destination);
-            oout.writeInt(currentNode);
+            oout.writeUTF(currentNode);
         }
         catch(Exception e) {e.printStackTrace();}
 
@@ -36,7 +36,7 @@ public class PacketIn extends PacketContent{
         return "Destination address: " + destination + " - Source address: " + currentNode ;
     }
 
-    public Integer getSource() {
+    public String getCurrentNode() {
         return currentNode;
     }
 

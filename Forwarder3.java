@@ -1,20 +1,19 @@
-import java.io.File;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.HashMap;
 
 public class Forwarder3 extends Node {
     static final String FORWARD3 = "forwarder3";
-    static final int DEFAULT_SRC_PORT = 54333;
-    static final String DST_NODE = "server";
-    static final int DST_PORT = 50001;
+    static final int FORWARD3_PORT = 54333;
+    static final int CONTROLLER_PORT = 50003;
+    static final String CONTROLLER_NODE = "controller";
 
     String nextNode;
     int nextPort;
+    DatagramPacket tempPack;
     InetSocketAddress newAddress;
-    DatagramPacket testPack;
+    InetSocketAddress controllerAddress;
 
     HashMap<Integer, String> forwardingTableNode = new HashMap<Integer, String>();
     HashMap<Integer, Integer> forwardingTablePort = new HashMap<Integer, Integer>();
@@ -28,53 +27,66 @@ public class Forwarder3 extends Node {
         }
     }
 
-
     @Override
     public void onReceipt(DatagramPacket packet) {
         try {
             System.out.println("Received packet");
             PacketContent content = PacketContent.fromDatagramPacket(packet);
 
+            if(content.getType() == PacketContent.FLOWMOD){
+                FlowMod ack = (FlowMod)content;
+                Integer dest = ack.getDst();
+                String node = ack.getNode();
+                int port = ack.getPort();
 
-            if(content.getType() == PacketContent.FILECONTENT){
-                FileContent fileContent = (FileContent)content;
-                Integer dest = fileContent.getDst();
-                nextNode = forwardingTableNode.get(dest);
-                nextPort = forwardingTablePort.get(dest);
+                forwardingTableNode.put(dest, node);
+                forwardingTablePort.put(dest, port);
 
-                InetSocketAddress endpoint2DstAddress = new InetSocketAddress(nextNode, nextPort);
-                packet.setSocketAddress(endpoint2DstAddress);
-                socket.send(packet);
-                System.out.println("Packet sent to server");
+                newAddress = new InetSocketAddress(node, port);
+                tempPack.setSocketAddress(newAddress);
+                socket.send(tempPack);
+                System.out.println("Forwarding table filled by controller. ");
             }
 
+            else if(content.getType() == PacketContent.FILECONTENT){
+                FileContent fileContent = (FileContent)content;
+                // header stores the destination
+                Integer dest = fileContent.getDst();
 
-            /**
-             *
-             */
+                // case where forwarding table contains the destination
+                if(forwardingTableNode.containsKey(dest) || forwardingTablePort.containsKey(dest)){
+                    nextNode = forwardingTableNode.get(dest);
+                    nextPort = forwardingTablePort.get(dest);
+                    newAddress = new InetSocketAddress(nextNode, nextPort);
+                    packet.setSocketAddress(newAddress);
+                    socket.send(packet);
+                    System.out.println("Destination found in forwarding table. Packet sent to server");
+                }
+                // destination not in the forwarding table -> request information from the controller
+                else{
+                    tempPack = packet;
+                    DatagramPacket request;
+                    request = new PacketIn(dest, FORWARD3).toDatagrampacket();
+                    request.setSocketAddress(controllerAddress);
+                    socket.send(request);
+                    System.out.println("Packet request sent to controller");
+                }
+            }
 
-        } catch (java.lang.Exception e) {
-            e.printStackTrace();
-        }
+        } catch (java.lang.Exception e) {e.printStackTrace();}
     }
+
     public synchronized void start() throws Exception {
         System.out.println("Waiting for contact");
-        forwardingTableNode.put(0x00DDAAAA, "server");
-        forwardingTablePort.put(0x00DDAAAA, 50001);
-        forwardingTableNode.put(0x00BBCCDD, "forwarder2");
-        forwardingTablePort.put(0x00BBCCDD, 54322);
+        controllerAddress = new InetSocketAddress(CONTROLLER_NODE, CONTROLLER_PORT);
         this.wait();
     }
 
-    /*
-     *
-     */
     public static void main(String[] args) {
         try {
-            (new Forwarder3(DEFAULT_SRC_PORT)).start();
+            (new Forwarder3(FORWARD3_PORT)).start();
             System.out.println("Program completed");
         } catch(java.lang.Exception e) {e.printStackTrace();}
     }
-
 
 }

@@ -1,7 +1,6 @@
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
 import java.util.Scanner;
 
 /**
@@ -13,9 +12,9 @@ import java.util.Scanner;
  */
 
 public class Endpoint1 extends Node {
-    static final int DEFAULT_SRC_PORT = 50000;
+    static final int LAPTOP_PORT = 50000;
     static final int DEFAULT_DST_PORT = 54321;
-    static final String DEFAULT_SRC_NODE = "laptop";
+    static final String LAPTOP_NODE = "laptop";
     static final String DEFAULT_DST_NODE = "forwarder1";
     InetSocketAddress laptopAddress;
     InetSocketAddress dstAddress;
@@ -65,7 +64,7 @@ public class Endpoint1 extends Node {
 
         fileContent = new FileContent(dst, src, message);
         packet = fileContent.toDatagrampacket();
-        laptopAddress = new InetSocketAddress(DEFAULT_SRC_NODE, DEFAULT_SRC_PORT);
+        laptopAddress = new InetSocketAddress(LAPTOP_NODE, LAPTOP_PORT);
         packet.setSocketAddress(dstAddress);
         socket.send(packet);
         System.out.println("Packet sent to forwarder 1");
@@ -78,7 +77,7 @@ public class Endpoint1 extends Node {
      */
     public static void main(String[] args) {
         try {
-            (new Endpoint1(DEFAULT_DST_NODE, DEFAULT_DST_PORT, DEFAULT_SRC_PORT)).start();
+            (new Endpoint1(DEFAULT_DST_NODE, DEFAULT_DST_PORT, LAPTOP_PORT)).start();
             System.out.println("Laptop completed");
         } catch(java.lang.Exception e) {e.printStackTrace();}
     }

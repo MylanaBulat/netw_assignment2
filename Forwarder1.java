@@ -1,33 +1,31 @@
-import java.io.File;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.HashMap;
 
 public class Forwarder1 extends Node {
     static final String FORWARD1 = "forwarder1";
-    static final int DEFAULT_SRC_PORT = 54321;
-    static final String DST_NODE = "forwarder2";
-    static final int DST_PORT = 54322;
+    static final int FORWARD1_PORT = 54321;
+    static final int CONTROLLER_PORT = 50003;
+    static final String CONTROLLER_NODE = "controller";
 
     String nextNode;
     int nextPort;
+    DatagramPacket tempPack;
     InetSocketAddress newAddress;
-    DatagramPacket testPack;
+    InetSocketAddress controllerAddress;
 
     HashMap<Integer, String> forwardingTableNode = new HashMap<Integer, String>();
     HashMap<Integer, Integer> forwardingTablePort = new HashMap<Integer, Integer>();
 
-    Forwarder1(int srcPort) {
+    Forwarder1(int port) {
         try {
-            socket = new DatagramSocket(srcPort);
+            socket = new DatagramSocket(port);
             listener.go();
         } catch (java.lang.Exception e) {
             e.printStackTrace();
         }
     }
-
 
     @Override
     public void onReceipt(DatagramPacket packet) {
@@ -35,8 +33,6 @@ public class Forwarder1 extends Node {
             System.out.println("Received packet");
             PacketContent content = PacketContent.fromDatagramPacket(packet);
 
-/**
- *
             if(content.getType() == PacketContent.FLOWMOD){
                 FlowMod ack = (FlowMod)content;
                 Integer dest = ack.getDst();
@@ -45,50 +41,55 @@ public class Forwarder1 extends Node {
 
                 forwardingTableNode.put(dest, node);
                 forwardingTablePort.put(dest, port);
+
                 newAddress = new InetSocketAddress(node, port);
-                testPack.setSocketAddress(newAddress);
-                socket.send(testPack);
+                tempPack.setSocketAddress(newAddress);
+                socket.send(tempPack);
+                System.out.println("Forwarding table filled by controller. ");
             }
- *
- */
 
-
-            if(content.getType() == PacketContent.FILECONTENT){
+            else if(content.getType() == PacketContent.FILECONTENT){
                 FileContent fileContent = (FileContent)content;
+                // header stores the destination
                 Integer dest = fileContent.getDst();
-                nextNode = forwardingTableNode.get(dest);
-                nextPort = forwardingTablePort.get(dest);
 
-                InetSocketAddress forwarder2Address = new InetSocketAddress(nextNode, nextPort);
-                packet.setSocketAddress(forwarder2Address);
-                socket.send(packet);
-                System.out.println("Packet sent to forwarder 2");
-             }
-
+                // case where forwarding table contains the destination
+                if(forwardingTableNode.containsKey(dest) || forwardingTablePort.containsKey(dest)){
+                    nextNode = forwardingTableNode.get(dest);
+                    nextPort = forwardingTablePort.get(dest);
+                    newAddress = new InetSocketAddress(nextNode, nextPort);
+                    packet.setSocketAddress(newAddress);
+                    socket.send(packet);
+                    System.out.println("Destination found in forwarding table. Packet sent to forwarder 2");
+                }
+                // destination not in the forwarding table -> request information from the controller
+                else{
+                    tempPack = packet;
+                    DatagramPacket request;
+                    request = new PacketIn(dest, FORWARD1).toDatagrampacket();
+                    request.setSocketAddress(controllerAddress);
+                    socket.send(request);
+                    System.out.println("Packet request sent to controller");
+                }
+            }
 
             /**
              *
              */
 
-        } catch (java.lang.Exception e) {
-            e.printStackTrace();
-        }
+        } catch (java.lang.Exception e) {e.printStackTrace();}
     }
+
     public synchronized void start() throws Exception {
         System.out.println("Waiting for contact");
-        forwardingTableNode.put(0x00DDAAAA, "forwarder2");
-        forwardingTablePort.put(0x00DDAAAA, 54322);
-        forwardingTableNode.put(0x00BBCCDD, "laptop");
-        forwardingTablePort.put(0x00BBCCDD, 50000);
+        controllerAddress = new InetSocketAddress(CONTROLLER_NODE, CONTROLLER_PORT);
         this.wait();
     }
 
-    /*
-     *
-     */
+
     public static void main(String[] args) {
         try {
-            (new Forwarder1(DEFAULT_SRC_PORT)).start();
+            (new Forwarder1(FORWARD1_PORT)).start();
             System.out.println("Program completed");
         } catch(java.lang.Exception e) {e.printStackTrace();}
     }

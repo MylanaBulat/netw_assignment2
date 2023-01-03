@@ -1,14 +1,13 @@
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 public class Endpoint2 extends Node{
-    static final int DEFAULT_SRC_PORT = 50001;
-    static final int DEFAULT_DST_PORT = 54333;
-    static final String DEFAULT_DST_NODE = "forwarder3";
-    static final String SRC_NODE ="server";
-    InetSocketAddress dstAddress;  // CP (Forwarder3 address)
+    static final int SERVER_PORT = 50001;
+    static final int FORWARD3_PORT = 54333;
+    static final String FORWARD3 = "forwarder3";
+    static final String SERVER_NODE ="server";
+    InetSocketAddress f3Address;  // CP (Forwarder3 address)
 
     Endpoint2(int port) {
         try {
@@ -35,7 +34,7 @@ public class Endpoint2 extends Node{
                 DatagramPacket response;
                 fileContent = new FileContent(dst, src, data);
                 response = fileContent.toDatagrampacket();
-                response.setSocketAddress(dstAddress);
+                response.setSocketAddress(f3Address);
                 socket.send(response);
                 System.out.println("Ack packet sent");
             }
@@ -48,7 +47,7 @@ public class Endpoint2 extends Node{
     }
 
     public synchronized void start() throws Exception {
-        dstAddress = new InetSocketAddress(DEFAULT_DST_NODE, DEFAULT_DST_PORT);
+        f3Address = new InetSocketAddress(FORWARD3, FORWARD3_PORT);
         System.out.println("Waiting for contact");
         this.wait();
     }
@@ -58,7 +57,7 @@ public class Endpoint2 extends Node{
      */
     public static void main(String[] args) {
         try {
-            (new Endpoint2(DEFAULT_SRC_PORT)).start();
+            (new Endpoint2(SERVER_PORT)).start();
             //System.out.println("...");
         } catch(java.lang.Exception e) {e.printStackTrace();}
     }
